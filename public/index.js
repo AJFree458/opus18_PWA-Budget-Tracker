@@ -151,3 +151,28 @@ document.querySelector("#add-btn").onclick = function() {
 document.querySelector("#sub-btn").onclick = function() {
   sendTransaction(false);
 };
+
+function offlineSave(data) {
+
+};
+
+function sendSaveToDB() {
+
+};
+
+function generateindexedDB() {
+  // We request a database instance.
+  const request = indexedDB.open("offlineTransactionDB", 1);
+  
+  // This returns a result that we can then manipulate.
+  request.onsuccess = event => {
+    const db = event.target.result;
+    // Creates an object store with a listID keypath that can be used to query on.
+    const transactionStore = db.createObjectStore("offlineTransactionDB", {keypath: "transID"});
+    // Creates a transactionIndex that we can query on.
+    transactionStore.createIndex("transactionIndex", "status");
+    transactionStore.createIndex("name", "name");
+    transactionStore.createIndex("value", "value");
+  };
+  return request
+};
