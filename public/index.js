@@ -1,8 +1,6 @@
 let transactions = [];
 let myChart;
 
-sendSaveToDB();
-
 fetch("/api/transaction")
   .then(response => {
     return response.json();

@@ -1,30 +1,42 @@
-function offlineSave(data) {
-  const request = generateindexedDB();
-  // Opens a transaction, accesses the toDoList objectStore and statusIndex.
-  request.onsuccess = () => {
-    const db = request.result;
-    const transaction = db.transaction(["offlineTransactionDB"], "readwrite");
-    const transactionStore = transaction.objectStore("offlineTransactionDB");
-    const transactionIndex = transactionStore.index("transactionIndex");
+let db;
+// create a new db request for a "budget" database.
+const request = indexedDB.open("budget", 1);
 
-    // Adds data to our objectStore
-    transactionStore.add({ transID: data.date, status: "LocalStored", name: data.name, value: data.value });
-   
-    // Return an item by index
-    const getRequestIdx = transactionIndex.getAll("LocalStored");
-    getRequestIdx.onsuccess = () => {
-      console.log(getRequestIdx.result); 
-    }; 
-  };
+request.onupgradeneeded = function(event) {
+   // create object store called "pending" and set autoIncrement to true
+  const db = event.target.result;
+  db.createObjectStore("pending", { autoIncrement: true });
 };
 
-function sendSaveToDB() {
-  const request = generateindexedDB();
-  const db = request.result;
-  // open a transaction on offlineTransaction db
-  const transaction = db.transaction(["offlineTransaction"], "readwrite");
+request.onsuccess = function(event) {
+  db = event.target.result;
+
+  // check if app is online before reading from db
+  if (navigator.onLine) {
+    checkDatabase();
+  }
+};
+
+request.onerror = function(event) {
+  console.log("Woops! " + event.target.errorCode);
+};
+
+function saveRecord(record) {
+  // create a transaction on the pending db with readwrite access
+  const transaction = db.transaction(["pending"], "readwrite");
+
   // access your pending object store
-  const store = transaction.objectStore("offlineTransaction");
+  const store = transaction.objectStore("pending");
+
+  // add record to your store with add method.
+  store.add(record);
+}
+
+function checkDatabase() {
+  // open a transaction on your pending db
+  const transaction = db.transaction(["pending"], "readwrite");
+  // access your pending object store
+  const store = transaction.objectStore("pending");
   // get all records from store and set to a variable
   const getAll = store.getAll();
 
@@ -51,21 +63,7 @@ function sendSaveToDB() {
       });
     }
   };
-};
+}
 
-function generateindexedDB() {
-  // We request a database instance.
-  const request = indexedDB.open("offlineTransactionDB", 1);
-  
-  // This returns a result that we can then manipulate.
-  request.onsuccess = event => {
-    const db = event.target.result;
-    // Creates an object store with a listID keypath that can be used to query on.
-    const transactionStore = db.createObjectStore("offlineTransactionDB", {keypath: "transID"});
-    // Creates a transactionIndex that we can query on.
-    transactionStore.createIndex("transactionIndex", "status");
-    transactionStore.createIndex("name", "name");
-    transactionStore.createIndex("value", "value");
-  };
-  return request
-};
+// listen for app coming back online
+window.addEventListener("online", checkDatabase);
