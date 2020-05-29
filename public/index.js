@@ -155,7 +155,23 @@ document.querySelector("#sub-btn").onclick = function() {
 };
 
 function offlineSave(data) {
+  const request = generateindexedDB();
+  // Opens a transaction, accesses the toDoList objectStore and statusIndex.
+  request.onsuccess = () => {
+    const db = request.result;
+    const transaction = db.transaction(["toDoList"], "readwrite");
+    const toDoListStore = transaction.objectStore("toDoList");
+    const statusIndex = toDoListStore.index("statusIndex");
 
+    // Adds data to our objectStore
+    toDoListStore.add({ listID: "1", status: "complete" });
+   
+    // Return an item by index
+    const getRequestIdx = statusIndex.getAll("complete");
+    getRequestIdx.onsuccess = () => {
+      console.log(getRequestIdx.result); 
+    }; 
+  };
 };
 
 function sendSaveToDB() {
